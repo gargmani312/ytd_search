@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} Homepage {% endblock %}
+{% block content %}
+<script>
+    var app = angular.module('myApp',  []);
+    app.config(['$httpProvider', function ($httpProvider) {
+        $httpProvider.defaults.xsrfCookieName = 'csrftoken';
+        $httpProvider.defaults.xsrfHeaderName = 'X-CSRFToken';
+    }]);
+    app.config(function ($interpolateProvider) {
+        $interpolateProvider.startSymbol('{$');
+        $interpolateProvider.endSymbol('$}');
+    });
+    app.controller("appController", function ($scope, $http) {
+        $scope.search_q = ''
+        $scope.search_query = function() {
+		        $http({
+			      method: 'POST',
+			      url: `{% url 'app_1:ytd_api' %}`,
+			      data: {"q": $scope.search_q}
+		      }).then(function success(response) {
+            if (response.status === 200 ) {
+                  $scope.obtained_data = response.data['data'];
+                }
+               else {
+                  alert("Sorry something went wrong");
+               }
+             }, function error(response) {
+                if (response.status === 429 ) {
+                  alert('Request limit exceeded , Try after sometime !!');
+                }
+              }
+             );
+	      }
+    });
+</script>
+
+<section ng-app="myApp" ng-controller="appController">
+  <div ng-show='!obtained_data'>
+    <div class="w3-container w3-teal">
+      <h2 class="center_align jumbotron">Welcome to YTD Api</h2>
+
+    </div>
+    <form class="w3-container">
+      <label class="w3-text-teal w3-margin-top">Search bar: </label>
+      <input type="search" ng-model='search_q' value=""
+        class="w3-input w3-border w3-light-grey"
+        placeholder="search youtube data">
+      <button  class="w3-btn w3-blue-grey w3-margin-top" type="submit" ng-click="search_query()">Submit</button>
+    </form>
+  </div>
+  <div class="" ng-show="obtained_data">
+    <div class="w3-card-4" ng-repeat='data in obtained_data'>
+
+      <header class="w3-container w3-light-grey">
+        <h3>{$ data.title $}</h3>
+      </header>
+
+      <div class="w3-container">
+        <p>Published at: {$ data.published_at | date $}</p>
+        <p> Channel link: <a href="{$ data.channel_link $}">{$ data.channel_link $}</a></p>
+        <hr>
+        <img alt="img" class="w3-left w3-margin-right" ng-src="{$ data.image $}">
+        <p> <b>Description :</b>{$ data.description $}</p>
+      </div>
+      <button class="w3-button w3-block w3-dark-grey" ><a href="{$ data.link $}"></a>Link</button>
+      <br>
+</div>
+  </div>
+</section>
+
+{% endblock %}
